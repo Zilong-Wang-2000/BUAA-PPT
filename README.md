@@ -1,4 +1,4 @@
-# 学术报告 PPT 模板
+# 学术报告 PPT 模板：取 Beamer 之精华，补 PowerPoint 之糟粕
 
 ## LaTeX Beamer 格式的优点和缺点
 
