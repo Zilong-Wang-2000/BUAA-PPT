@@ -75,8 +75,8 @@ Sub AddSectionNamesToHeader()
         ' Clear existing header shapes with header section names
         For Each headerShape In slide.Shapes
             If Left(headerShape.Name, 17) = "HeaderSectionName" Or Left(headerShape.Name, 15) = "HeaderSeparator" Then
+                Debug.Print "Delete " & headerShape.Name
                 headerShape.Delete
-    
             End If
         Next headerShape
 
