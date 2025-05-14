@@ -56,25 +56,6 @@ Sub AddSectionNamesToHeader()
         sectionNames.Remove sectionNames.Count
     End If
 
-    ' Statistic the number of slides in each section
-    Dim sectionSlideCounts As Object
-    Set sectionSlideCounts = CreateObject("Scripting.Dictionary")
-
-    For i = 1 To ActivePresentation.SectionProperties.Count
-        Dim startSlide As Integer
-        Dim endSlide As Integer
-
-        startSlide = ActivePresentation.SectionProperties.FirstSlide(i)
-        If i < ActivePresentation.SectionProperties.Count Then
-            endSlide = ActivePresentation.SectionProperties.FirstSlide(i + 1) - 1
-        Else
-            endSlide = ActivePresentation.Slides.Count
-        End If
-
-        sectionSlideCounts.Add ActivePresentation.SectionProperties.Name(i), endSlide - startSlide + 1
-        Debug.Print ActivePresentation.SectionProperties.Name(i) & ": " & sectionSlideCounts(ActivePresentation.SectionProperties.Name(i)) & " slides"
-    Next i
-
     ' Create a dictionary to store the starting slide index for each section
     Dim sectionStartSlides As Object
     Set sectionStartSlides = CreateObject("Scripting.Dictionary")
@@ -87,7 +68,7 @@ Sub AddSectionNamesToHeader()
     Next i
 
     ' Add section names to each slide
-    For Each slide In ActivePresentation.Slides
+    For Each slide In ActivePresentation.Slides 
         sectionIndex = slide.sectionIndex
         currentSectionName = ActivePresentation.SectionProperties.Name(sectionIndex)
 
@@ -100,58 +81,46 @@ Sub AddSectionNamesToHeader()
             End If
         Next j
 
-        ' Add section names to the header with width proportional to the number of slides in each section
-        Dim totalSlides As Integer
-        totalSlides = 0
+        ' Add section names to the header horizontally
+        Dim portion As Single
+        If sectionNames.Count > 0 Then
+            portion = ActivePresentation.PageSetup.SlideWidth / sectionNames.Count
+            For i = 1 To sectionNames.Count
+                Set headerShape = slide.Shapes.AddTextbox(msoTextOrientationHorizontal, (i - 1) * portion, 6, portion, 10)
+                headerShape.Name = "HeaderSectionName" & i
+                headerShape.TextFrame.TextRange.Font.NameFarEast = "黑体"
+                headerShape.TextFrame.TextRange.Font.Name = "Times New Roman"
+                headerShape.TextFrame.TextRange.Font.Size = 16
+                headerShape.TextFrame.TextRange.Text = sectionNames(i)
+                headerShape.TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+                headerShape.TextFrame.TextRange.Font.Color.RGB = RGB(205, 205, 205)
 
-        For i = 1 To sectionNames.Count
-            totalSlides = totalSlides + sectionSlideCounts(sectionNames(i))
-        Next i
+                If sectionNames(i) = currentSectionName Then
+                    headerShape.TextFrame.TextRange.Font.Bold = msoTrue
+                    headerShape.TextFrame.TextRange.Font.Color.RGB = RGB(255, 255, 0)
+                End If
 
-        Dim currentX As Single
-        currentX = 0
+                ' Add hyperlink to section name
+                sectionSlideIndex = sectionStartSlides(sectionNames(i))
+                headerShape.ActionSettings(ppMouseClick).Hyperlink.Address = ""
+                headerShape.ActionSettings(ppMouseClick).Action = ppActionHyperlink
+                headerShape.ActionSettings(ppMouseClick).Hyperlink.SubAddress = ActivePresentation.Slides(sectionSlideIndex).SlideID & "," & sectionSlideIndex & "," & ActivePresentation.Slides(sectionSlideIndex).Name
+                headerShape.TextFrame.TextRange.Font.Underline = msoFalse
 
-        For i = 1 To sectionNames.Count
-            Dim sectionWidth As Single
-            sectionWidth = (sectionSlideCounts(sectionNames(i)) / totalSlides) * ActivePresentation.PageSetup.SlideWidth
-
-            Set headerShape = slide.Shapes.AddTextbox(msoTextOrientationHorizontal, currentX, 6, sectionWidth, 10)
-            headerShape.Name = "HeaderSectionName" & i
-            headerShape.TextFrame.TextRange.Font.NameFarEast = "黑体"
-            headerShape.TextFrame.TextRange.Font.Name = "Times New Roman"
-            headerShape.TextFrame.TextRange.Font.Size = 16
-            headerShape.TextFrame.TextRange.Text = sectionNames(i)
-            headerShape.TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
-            headerShape.TextFrame.TextRange.Font.Color.RGB = RGB(205, 205, 205)
-            headerShape.TextFrame.VerticalAnchor = msoAnchorMiddle
-
-            If sectionNames(i) = currentSectionName Then
-                headerShape.TextFrame.TextRange.Font.Bold = msoTrue
-                headerShape.TextFrame.TextRange.Font.Color.RGB = RGB(255, 255, 0)
-            End If
-
-            ' Add hyperlink to section name
-            sectionSlideIndex = sectionStartSlides(sectionNames(i))
-            headerShape.ActionSettings(ppMouseClick).Hyperlink.Address = ""
-            headerShape.ActionSettings(ppMouseClick).Action = ppActionHyperlink
-            headerShape.ActionSettings(ppMouseClick).Hyperlink.SubAddress = ActivePresentation.Slides(sectionSlideIndex).SlideID & "," & sectionSlideIndex & "," & ActivePresentation.Slides(sectionSlideIndex).Name
-            headerShape.TextFrame.TextRange.Font.Underline = msoFalse
-
-            ' Add a separator "|" between titles
-            If i < sectionNames.Count Then
-                Dim sepShape As Shape
-                Set sepShape = slide.Shapes.AddTextbox(msoTextOrientationHorizontal, currentX + sectionWidth - 10, 6, 20, 10)
-                sepShape.Name = "HeaderSeparator" & i
-                sepShape.TextFrame.TextRange.Font.NameFarEast = "黑体"
-                sepShape.TextFrame.TextRange.Font.Name = "Times New Roman"
-                sepShape.TextFrame.TextRange.Font.Size = 16
-                sepShape.TextFrame.TextRange.Text = "|"
-                sepShape.TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
-                sepShape.TextFrame.TextRange.Font.Color.RGB = RGB(205, 205, 205)
-            End If
-
-            currentX = currentX + sectionWidth
-        Next i
+                ' Add a separator "|" between titles
+                If i < sectionNames.Count Then
+                    Dim sepShape As Shape
+                    Set sepShape = slide.Shapes.AddTextbox(msoTextOrientationHorizontal, i * portion - 10, 6, 20, 10)
+                    sepShape.Name = "HeaderSeparator" & i
+                    sepShape.TextFrame.TextRange.Font.NameFarEast = "黑体"
+                    sepShape.TextFrame.TextRange.Font.Name = "Times New Roman"
+                    sepShape.TextFrame.TextRange.Font.Size = 16
+                    sepShape.TextFrame.TextRange.Text = "|"
+                    sepShape.TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+                    sepShape.TextFrame.TextRange.Font.Color.RGB = RGB(205, 205, 205)
+                End If
+            Next i
+        End If
     Next slide
 End Sub
 
