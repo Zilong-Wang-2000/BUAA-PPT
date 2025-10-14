@@ -2,6 +2,8 @@
 
 ## Modified from ZhouKanglei/BUAA-PPT
 
+根据个人喜好做了调整，主要包括加了非常喜欢的小圆圈导航，然后删掉了转跳按钮（Mac显示下不好看）
+
 ## LaTeX Beamer 格式的优点和缺点
 
 以 [BUAA Beamer Theme](https://www.overleaf.com/latex/templates/buaa-beamer-theme/sqsnwgkbxvtx) 为例，LaTeX 中 Beamer 格式的优点包括：
