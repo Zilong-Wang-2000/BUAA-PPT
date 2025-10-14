@@ -1,5 +1,5 @@
 ' ===================================================================
-' PowerPoint 自动化格式宏
+' Beamer Like PowerPoint 自动化格式宏
 ' 功能:
 ' 1. AddProgressBar: 在幻灯片【最下方】添加一个动态进度条。
 ' 2. AddSectionNamesToHeader: 在顶部创建完整的 Beamer 风格导航。
@@ -8,19 +8,17 @@
 '
 ' 作者: Gemini（乙方）& ZilongWang (甲方)
 ' 日期: 2025-10-14
-' 兼容性: 已针对 macOS 和 Windows 调整。
+' 兼容性: MacOS OK!
 ' ===================================================================
 
-' Subroutine 1: 添加底部进度条 (已修改)
+' Subroutine 1: 添加底部进度条
 Sub AddProgressBar()
     Dim X As Long
-    Dim S As shape
+    Dim S As Shape
     Dim slideHeight As Single
-    
     On Error Resume Next
     With ActivePresentation
-        slideHeight = .PageSetup.slideHeight
-        
+        slideHeight = .PageSetup.SlideHeight
         For X = 3 To .Slides.Count - 1
             On Error Resume Next
             Do
@@ -30,14 +28,10 @@ Sub AddProgressBar()
                 .Slides(X).Shapes("PC").Delete
             Loop Until .Slides(X).Shapes("PC") Is Nothing
             On Error GoTo 0
-            
-            ' 绘制背景进度条 (灰色)，Y 坐标已修改为页面底部
             Set S = .Slides(X).Shapes.AddLine(-1, slideHeight - 2, .PageSetup.SlideWidth + 1, slideHeight - 2)
             S.Line.Weight = 3
             S.Line.ForeColor.RGB = RGB(205, 205, 205)
             S.Name = "PB"
-            
-            ' 绘制当前进度条 (蓝色)，Y 坐标已修改为页面底部
             Set S = .Slides(X).Shapes.AddLine(-1, slideHeight - 2, (X - 2) * .PageSetup.SlideWidth / (.Slides.Count - 3) + 1, slideHeight - 2)
             S.Line.Weight = 3
             S.Line.ForeColor.RGB = RGB(50, 100, 200)
@@ -46,10 +40,10 @@ Sub AddProgressBar()
     End With
 End Sub
 
-' Subroutine 2: 创建完整的顶部导航系统 (标题 + 圆圈)
+' Subroutine 2: 创建完整的顶部导航系统 (高亮圆圈已增大)
 Sub AddSectionNamesToHeader()
     Dim sld As slide
-    Dim headerShape As shape, circleShape As shape, sepShape As shape
+    Dim headerShape As Shape, circleShape As Shape, sepShape As Shape
     Dim i As Long, j As Long
     
     ' --- 数据准备 ---
@@ -57,7 +51,6 @@ Sub AddSectionNamesToHeader()
     Dim sectionStartSlides As New Collection
     Dim sectionSlideCounts As New Collection
     
-    ' 收集所有章节的名称、起始幻灯片索引和幻灯片数量
     For i = 1 To ActivePresentation.SectionProperties.Count
         sectionNames.Add ActivePresentation.SectionProperties.Name(i)
         sectionStartSlides.Add ActivePresentation.SectionProperties.FirstSlide(i), ActivePresentation.SectionProperties.Name(i)
@@ -75,7 +68,6 @@ Sub AddSectionNamesToHeader()
 
     ' --- 遍历每张幻灯片，绘制导航元素 ---
     For Each sld In ActivePresentation.Slides
-        ' 清理旧的导航元素
         For i = sld.Shapes.Count To 1 Step -1
             If Left(sld.Shapes(i).Name, 17) = "HeaderSectionName" Or _
                Left(sld.Shapes(i).Name, 15) = "HeaderSeparator" Or _
@@ -84,16 +76,13 @@ Sub AddSectionNamesToHeader()
             End If
         Next i
 
-        ' 获取当前幻灯片所在的章节名称
         Dim currentSectionName As String
         currentSectionName = ActivePresentation.SectionProperties.Name(sld.sectionIndex)
         
         If sectionNames.Count > 0 Then
-            ' 计算每个章节标题所占的宽度
             Dim portion As Single
             portion = ActivePresentation.PageSetup.SlideWidth / sectionNames.Count
 
-            ' 循环绘制每个章节的标题和其下方的圆圈
             For i = 1 To sectionNames.Count
                 Dim sectionTitle As String
                 sectionTitle = sectionNames(i)
@@ -110,13 +99,11 @@ Sub AddSectionNamesToHeader()
                     .Font.Color.RGB = RGB(205, 205, 205)
                 End With
 
-                ' 高亮当前章节的标题
                 If sectionTitle = currentSectionName Then
                     headerShape.TextFrame.TextRange.Font.Bold = msoTrue
                     headerShape.TextFrame.TextRange.Font.Color.RGB = RGB(240, 180, 50)
                 End If
                 
-                ' 为标题添加超链接
                 Dim sectionStartIndex As Long
                 sectionStartIndex = sectionStartSlides(sectionTitle)
                 With headerShape.ActionSettings(ppMouseClick)
@@ -125,33 +112,44 @@ Sub AddSectionNamesToHeader()
                 End With
 
                 ' 2. 在标题下方绘制本章节的导航圆圈
-                Dim slidesInSection As Long
+                Dim slidesInSection As Long, circlesTotalWidth As Single, circlesStartLeft As Single
+                Dim circleDiameter As Single, highlightedCircleDiameter As Single, circleSpacing As Single, verticalPos As Single
+                
                 slidesInSection = sectionSlideCounts(sectionTitle)
-                
-                Dim circleDiameter As Single, circleSpacing As Single, verticalPos As Single
-                circleDiameter = 5
+                circleDiameter = 5 ' 普通圆圈的直径
+                highlightedCircleDiameter = 7 ' 高亮圆圈的直径
                 circleSpacing = 4
-                verticalPos = 16 ' 调整垂直位置，使其在标题下方
+                verticalPos = 16
                 
-                ' 计算这组圆圈的起始位置，使其在标题 portion 内居中
-                Dim circlesTotalWidth As Single, circlesStartLeft As Single
                 circlesTotalWidth = (slidesInSection * circleDiameter) + ((slidesInSection - 1) * circleSpacing)
                 circlesStartLeft = ((i - 1) * portion) + (portion - circlesTotalWidth) / 2
                 
                 For j = 1 To slidesInSection
-                    Dim targetSlideIndex As Long
+                    Dim targetSlideIndex As Long, currentDiameter As Single, sizeAdjust As Single
+                    Dim drawLeft As Single, drawTop As Single
                     targetSlideIndex = sectionStartIndex + j - 1
                     
-                    Set circleShape = sld.Shapes.AddShape(msoShapeOval, circlesStartLeft + ((j - 1) * (circleDiameter + circleSpacing)), verticalPos, circleDiameter, circleDiameter)
+                    ' 判断使用哪个直径尺寸
+                    If sld.SlideIndex = targetSlideIndex Then
+                        currentDiameter = highlightedCircleDiameter
+                    Else
+                        currentDiameter = circleDiameter
+                    End If
+                    
+                    ' 计算尺寸和位置的微调量，以保持视觉居中
+                    sizeAdjust = (currentDiameter - circleDiameter) / 2
+                    drawLeft = circlesStartLeft + ((j - 1) * (circleDiameter + circleSpacing)) - sizeAdjust
+                    drawTop = verticalPos - sizeAdjust
+                    
+                    ' 用计算好的尺寸和位置绘制圆圈
+                    Set circleShape = sld.Shapes.AddShape(msoShapeOval, drawLeft, drawTop, currentDiameter, currentDiameter)
                     circleShape.Name = "BeamerSlideCircle" & i & "_" & j
 
-                    ' 为圆圈添加超链接
                     With circleShape.ActionSettings(ppMouseClick)
                         .Action = ppActionHyperlink
                         .Hyperlink.SubAddress = ActivePresentation.Slides(targetSlideIndex).SlideID & "," & targetSlideIndex & "," & ActivePresentation.Slides(targetSlideIndex).Name
                     End With
                     
-                    ' 高亮当前幻灯片对应的圆圈
                     If sld.SlideIndex = targetSlideIndex Then
                         circleShape.Fill.Visible = msoTrue
                         circleShape.Fill.ForeColor.RGB = RGB(180, 180, 180)
@@ -186,7 +184,7 @@ End Sub
 ' Subroutine 3: 更新页码格式
 Sub UpdatePageFormat()
     Dim sld As slide
-    Dim shp As shape
+    Dim shp As Shape
     For Each sld In ActivePresentation.Slides
         For Each shp In sld.Shapes
             If shp.Type = msoPlaceholder Then
@@ -211,6 +209,6 @@ End Sub
 ' 主控宏: 运行所有格式化功能
 Sub RunAllFunctions()
     AddProgressBar
-    AddSectionNamesToHeader
+    AddSectionNamesToHeader 
     UpdatePageFormat
 End Sub
