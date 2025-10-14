@@ -1,5 +1,7 @@
 # 学术报告 PPT 模板：取 Beamer 之精华，补 PowerPoint 之糟粕
 
+## Modified from ZhouKanglei/BUAA-PPT
+
 ## LaTeX Beamer 格式的优点和缺点
 
 以 [BUAA Beamer Theme](https://www.overleaf.com/latex/templates/buaa-beamer-theme/sqsnwgkbxvtx) 为例，LaTeX 中 Beamer 格式的优点包括：
